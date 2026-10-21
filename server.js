@@ -36,7 +36,6 @@ function initTeams() {
         teams[teamName] = {
             online: false,
             score: 0,
-            // ලකුණු විස්තර ගබඩා කිරීමට අලුත් fields එකතු කර ඇත
             bomb1: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 },
             bomb2: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 },
             bomb3: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 }
@@ -52,7 +51,7 @@ io.on('connection', (socket) => {
     socket.on('registerTeam', (teamName) => {
         if(teams[teamName]) {
             if (teams[teamName].online && socket.teamName !== teamName) {
-                socket.emit('loginRejected', 'This group has already been joined from another phone!');
+                socket.emit('loginRejected', 'මෙම කණ්ඩායමට දැනටමත් වෙනත් දුරකථනයකින් සම්බන්ධ වී ඇත!');
             } else {
                 socket.teamName = teamName;
                 teams[teamName].online = true;
@@ -125,6 +124,8 @@ io.on('connection', (socket) => {
         let baseScore = correctCount * 100;
         let timeLeft = Math.max(1200 - elapsedTime, 0);
         let timeBonus = Math.floor(timeLeft / 10) * correctCount;
+        
+        let attemptResult = '';
 
         if(correctCount === totalNeeded) {
             currentBomb.status = 'defused';
@@ -133,8 +134,9 @@ io.on('connection', (socket) => {
             currentBomb.base = baseScore;
             currentBomb.bonus = timeBonus;
             currentBomb.total = baseScore + timeBonus;
-            
             teams[team].score += currentBomb.total;
+            
+            attemptResult = 'defused';
         } else {
             currentBomb.attempts += 1;
             if(currentBomb.attempts >= 2) {
@@ -144,10 +146,23 @@ io.on('connection', (socket) => {
                 currentBomb.base = baseScore;
                 currentBomb.bonus = timeBonus;
                 currentBomb.total = baseScore + timeBonus;
-                
                 teams[team].score += currentBomb.total;
+                
+                attemptResult = 'exploded';
+            } else {
+                attemptResult = 'wrong';
             }
         }
+        
+        // ළමයින්ගේ ෆෝන් එකට ප්‍රතිඵලය යැවීම
+        io.emit('attemptFeedback', {
+            team: team,
+            status: attemptResult,
+            correctCount: correctCount,
+            totalNeeded: totalNeeded,
+            attemptsLeft: 2 - currentBomb.attempts
+        });
+
         io.emit('updateState', teams);
     });
 });

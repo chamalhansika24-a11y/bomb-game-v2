@@ -220,6 +220,20 @@
             socket.emit('submitCode', { team: myTeam, bomb: bombId, codeArray: values });
             inputs.forEach(input => input.value = '');
         }
+
+        // අලුතින් එකතු කළ Alert Message කේතය (English)
+        socket.on('attemptFeedback', (data) => {
+            if (data.team === myTeam) {
+                if (data.status === 'wrong') {
+                    alert(`❌ INCORRECT CODE!\n\nYou have correctly found ${data.correctCount} out of ${data.totalNeeded} blanks.\nYou have ${data.attemptsLeft} attempt(s) left.`);
+                } else if (data.status === 'exploded') {
+                    alert(`💥 BOMB EXPLODED!\n\nYour final attempt had ${data.correctCount} out of ${data.totalNeeded} correct blanks.`);
+                } else if (data.status === 'defused') {
+                    alert(`✅ BOMB DEFUSED!\n\nCongratulations! You successfully defused the bomb.`);
+                }
+            }
+        });
+
     </script>
 </body>
 </html>
