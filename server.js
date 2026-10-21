@@ -8,7 +8,6 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// බෝම්බ 4 සඳහා නිවැරදි පිළිතුරු (පසුව C ප්‍රශ්න හැදුවාම මේවා වෙනස් කරමු)
 const correctAnswers = {
     bomb1: ["10", "15", "20"],
     bomb2: ["5", "10", "15"],
@@ -17,10 +16,10 @@ const correctAnswers = {
 };
 
 const bombLimits = {
-    bomb1: 180,  // විනාඩි 3
-    bomb2: 420,  // විනාඩි 7
-    bomb3: 780,  // විනාඩි 13
-    bomb4: 1200  // විනාඩි 20
+    bomb1: 180,  // 3 mins
+    bomb2: 420,  // 7 mins
+    bomb3: 780,  // 13 mins
+    bomb4: 1200  // 20 mins
 };
 
 const teamList = [
@@ -30,7 +29,7 @@ const teamList = [
 
 let teams = {};
 let gameState = 'waiting';
-let elapsedTime = 0; // ගතවූ කාලය (තත්පර වලින්)
+let elapsedTime = 0;
 let timerInterval = null;
 
 function initTeams() {
@@ -38,7 +37,7 @@ function initTeams() {
     teamList.forEach(teamName => {
         teams[teamName] = {
             online: false,
-            score: 0, // මුළු ලකුණු
+            score: 0,
             bomb1: { status: 'active', attempts: 0 },
             bomb2: { status: 'active', attempts: 0 },
             bomb3: { status: 'active', attempts: 0 },
@@ -52,11 +51,19 @@ io.on('connection', (socket) => {
     socket.emit('updateState', teams);
     socket.emit('gameState', { state: gameState, time: elapsedTime });
 
+    // Login Restriction Logic
     socket.on('registerTeam', (teamName) => {
-        socket.teamName = teamName;
         if(teams[teamName]) {
-            teams[teamName].online = true;
-            io.emit('updateState', teams);
+            if (teams[teamName].online && socket.teamName !== teamName) {
+                // දැනටමත් වෙන කෙනෙක් Online නම් Reject කරනවා
+                socket.emit('loginRejected', 'මෙම කණ්ඩායමට දැනටමත් වෙනත් දුරකථනයකින් සම්බන්ධ වී ඇත!');
+            } else {
+                // කවුරුත් නැත්නම් Login එක Accept කරනවා
+                socket.teamName = teamName;
+                teams[teamName].online = true;
+                socket.emit('loginSuccess');
+                io.emit('updateState', teams);
+            }
         }
     });
 
@@ -77,7 +84,6 @@ io.on('connection', (socket) => {
                 elapsedTime++;
                 io.emit('timerUpdate', elapsedTime);
                 
-                // වෙලාව ඉවර වෙද්දී බෝම්බ ස්වයංක්‍රීයව පිපිරවීම
                 let needsUpdate = false;
                 for(let teamName in teams) {
                     ['bomb1', 'bomb2', 'bomb3', 'bomb4'].forEach(b => {
@@ -116,7 +122,6 @@ io.on('connection', (socket) => {
 
         if(!currentBomb || currentBomb.status !== 'active') return;
 
-        // නිවැරදි උත්තර කීයක් තියෙනවද බැලීම
         let correctCount = 0;
         let actualAnswers = correctAnswers[bomb];
         for(let i=0; i<3; i++) {
@@ -125,14 +130,12 @@ io.on('connection', (socket) => {
 
         if(correctCount === 3) {
             currentBomb.status = 'defused';
-            // ලකුණු = Base (100) + ඉතිරි වෙලාව (Time Bonus)
             let timeBonus = bombLimits[bomb] - elapsedTime;
             teams[team].score += (100 + timeBonus);
         } else {
             currentBomb.attempts += 1;
             if(currentBomb.attempts >= 2) {
                 currentBomb.status = 'exploded';
-                // අර්ධ ලකුණු (Partial Marks) 
                 if(correctCount === 1) teams[team].score += 20;
                 if(correctCount === 2) teams[team].score += 50;
             }
