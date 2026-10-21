@@ -36,9 +36,10 @@ function initTeams() {
         teams[teamName] = {
             online: false,
             score: 0,
-            bomb1: { status: 'active', attempts: 0, timeTaken: '' },
-            bomb2: { status: 'active', attempts: 0, timeTaken: '' },
-            bomb3: { status: 'active', attempts: 0, timeTaken: '' }
+            // ලකුණු විස්තර ගබඩා කිරීමට අලුත් fields එකතු කර ඇත
+            bomb1: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 },
+            bomb2: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 },
+            bomb3: { status: 'active', attempts: 0, timeTaken: '', correct: 0, base: 0, bonus: 0, total: 0 }
         };
     });
 }
@@ -121,18 +122,30 @@ io.on('connection', (socket) => {
             if(codeArray[i] === actualAnswers[i]) correctCount++;
         }
 
+        let baseScore = correctCount * 100;
+        let timeLeft = Math.max(1200 - elapsedTime, 0);
+        let timeBonus = Math.floor(timeLeft / 10) * correctCount;
+
         if(correctCount === totalNeeded) {
             currentBomb.status = 'defused';
             currentBomb.timeTaken = formatTime(elapsedTime);
-            let baseScore = totalNeeded * 100;
-            let timeBonus = 1200 - elapsedTime;
-            teams[team].score += (baseScore + timeBonus);
+            currentBomb.correct = correctCount;
+            currentBomb.base = baseScore;
+            currentBomb.bonus = timeBonus;
+            currentBomb.total = baseScore + timeBonus;
+            
+            teams[team].score += currentBomb.total;
         } else {
             currentBomb.attempts += 1;
             if(currentBomb.attempts >= 2) {
                 currentBomb.status = 'exploded';
                 currentBomb.timeTaken = formatTime(elapsedTime);
-                teams[team].score += (correctCount * 100);
+                currentBomb.correct = correctCount;
+                currentBomb.base = baseScore;
+                currentBomb.bonus = timeBonus;
+                currentBomb.total = baseScore + timeBonus;
+                
+                teams[team].score += currentBomb.total;
             }
         }
         io.emit('updateState', teams);

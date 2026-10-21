@@ -24,7 +24,7 @@
         .online { background: #2ecc71; color: black; }
         .offline { background: #555; color: #ccc; }
 
-        button { font-size: 18px; padding: 10px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; margin: 5px; }
+        button.control-btn { font-size: 18px; padding: 10px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; margin: 5px; }
         #startBtn { background: #3498db; color: white; }
         #resetBtn { background: #e74c3c; color: white; }
         
@@ -34,14 +34,27 @@
         .rank-item.top1 { border-left-color: #f1c40f; background: #443a11; }
         .rank-item.top2 { border-left-color: #bdc3c7; background: #2c3135; }
         .rank-item.top3 { border-left-color: #cd7f32; background: #3a2512; }
+        
+        .info-btn { background: #34495e; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 14px; margin-left: 10px; }
+        .info-btn:hover { background: #2980b9; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
+        .modal-content { background-color: #222; margin: 10% auto; padding: 20px; border: 2px solid #3498db; width: 50%; border-radius: 10px; color: white; text-align: left; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: center; }
+        th { background-color: #333; }
+        .total-row { font-weight: bold; background-color: #1a1a1a; font-size: 18px; color: #f1c40f; }
     </style>
 </head>
 <body>
     <div id="top-bar">
         <h1>💣 HACKATHON LIVE DASHBOARD 💣</h1>
         <div id="timer">20:00</div>
-        <button id="startBtn" onclick="socket.emit('startGame')">▶ START GAME</button>
-        <button id="resetBtn" onclick="socket.emit('resetGame')">🔄 RESET GAME</button>
+        <button id="startBtn" class="control-btn" onclick="socket.emit('startGame')">▶ START GAME</button>
+        <button id="resetBtn" class="control-btn" onclick="socket.emit('resetGame')">🔄 RESET GAME</button>
     </div>
 
     <div class="main-layout">
@@ -52,8 +65,31 @@
         </div>
     </div>
 
+    <!-- Score Breakdown Modal -->
+    <div id="scoreModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTeamName">Team Score Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Bomb</th>
+                        <th>Correct Blanks</th>
+                        <th>Base Score</th>
+                        <th>Time Bonus</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script>
         const socket = io();
+        let globalTeamsData = {}; // දත්ත Popup එකට ගන්න ගබඩා කර තබා ගැනීම
         
         function formatTime(seconds) {
             let m = Math.floor(seconds / 60);
@@ -78,6 +114,8 @@
         });
 
         socket.on('updateState', (teams) => {
+            globalTeamsData = teams; // Update global data for Modal
+            
             const container = document.getElementById('teamsContainer');
             const lbList = document.getElementById('leaderboardList');
             container.innerHTML = '';
@@ -112,11 +150,63 @@
                 lbList.innerHTML += `
                     <div class="rank-item ${rankClass}">
                         <span>#${index + 1} ${t.name}</span>
-                        <span>${t.score} Pts</span>
+                        <span>
+                            ${t.score} Pts 
+                            <button class="info-btn" onclick="showScoreDetails('${t.name}')" title="View Breakdown">ℹ️</button>
+                        </span>
                     </div>
                 `;
             });
         });
+
+        // Modal Functions
+        function showScoreDetails(teamName) {
+            const team = globalTeamsData[teamName];
+            if(!team) return;
+
+            document.getElementById('modalTeamName').innerText = teamName + " - Score Breakdown";
+            
+            let tbody = document.getElementById('modalTableBody');
+            tbody.innerHTML = '';
+
+            let totalScore = 0;
+
+            ['bomb1', 'bomb2', 'bomb3'].forEach((b, idx) => {
+                let maxBlanks = (idx === 0) ? 3 : (idx === 1) ? 5 : 7;
+                let bData = team[b];
+                
+                let row = `<tr>
+                    <td>Bomb ${idx + 1} <br><small>(${bData.status})</small></td>
+                    <td>${bData.correct} / ${maxBlanks}</td>
+                    <td>${bData.base}</td>
+                    <td>${bData.bonus}</td>
+                    <td style="font-weight: bold; color: #2ecc71;">${bData.total}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+                totalScore += bData.total;
+            });
+
+            tbody.innerHTML += `
+                <tr class="total-row">
+                    <td colspan="4" style="text-align: right; padding-right: 20px;">GRAND TOTAL:</td>
+                    <td>${totalScore}</td>
+                </tr>
+            `;
+
+            document.getElementById('scoreModal').style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById('scoreModal').style.display = "none";
+        }
+
+        // ක්ලික් කළ විට Popup එක වැසීම
+        window.onclick = function(event) {
+            let modal = document.getElementById('scoreModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
     </script>
 </body>
 </html>
