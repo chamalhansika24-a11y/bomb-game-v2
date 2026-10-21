@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
     socket.on('registerTeam', (teamName) => {
         if(teams[teamName]) {
             if (teams[teamName].online && socket.teamName !== teamName) {
-                socket.emit('loginRejected', 'මෙම කණ්ඩායමට දැනටමත් වෙනත් දුරකථනයකින් සම්බන්ධ වී ඇත!');
+                socket.emit('loginRejected', 'This group has already been joined from another phone!');
             } else {
                 socket.teamName = teamName;
                 teams[teamName].online = true;
