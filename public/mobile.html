@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Defuse Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { background: #111; color: #0f0; font-family: monospace; text-align: center; padding: 15px; margin: 0; }
+        .container { max-width: 100%; margin: auto; }
+        select, input, button { font-size: 18px; background: #000; color: #0f0; border: 2px solid #0f0; box-sizing: border-box; }
+        select { width: 100%; padding: 15px; margin: 10px 0; }
+        button { width: 100%; padding: 15px; margin: 10px 0; background: #0f0; color: #000; font-weight: bold; cursor: pointer; }
+        .bomb-section { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #222; }
+        .status-defused { color: #2ecc71; font-weight: bold; font-size: 20px; }
+        .status-exploded { color: #e74c3c; font-weight: bold; font-size: 20px; }
+        .indiv-timer { float: right; color: #f1c40f; font-weight: bold; }
+        
+        .boxes-container { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
+        .code-box { width: 50px; height: 50px; text-align: center; font-size: 20px; font-weight: bold; border-radius: 5px; }
+        .change-team-btn { background: #333; color: #aaa; border: 1px solid #555; font-size: 14px; padding: 8px; margin-top: 15px; width: auto; display: inline-block; }
+        
+        #dashboard { display: none; }
+        #waitingScreen { display: none; margin-top: 50px; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container" id="loginScreen">
+        <h2>📟 SELECT YOUR TEAM</h2>
+        <select id="teamSelect">
+            <option value="Kubi.exe">Kubi.exe</option>
+            <option value="StackOverflow">StackOverflow</option>
+            <option value="Everywhere 2.0">Everywhere 2.0</option>
+            <option value="BYTE KNIGHTS">BYTE KNIGHTS</option>
+            <option value="Pentabyte">Pentabyte</option>
+            <option value="NoZero">NoZero</option>
+            <option value="Invariants">Invariants</option>
+            <option value="CacheMe">CacheMe</option>
+            <option value="Nexus">Nexus</option>
+            <option value="FrostByte">FrostByte</option>
+        </select>
+        <button onclick="joinTeam()">ENTER TERMINAL</button>
+    </div>
+
+    <div class="container" id="waitingScreen">
+        <h2 style="color: #f1c40f;">⏳ WAITING FOR ADMIN...</h2>
+        <p>තරගය ආරම්භ කරනතුරු රැඳී සිටින්න.</p>
+        <button class="change-team-btn" onclick="changeTeam()">🔄 Change Selected Team</button>
+    </div>
+
+    <div class="container" id="dashboard">
+        <h2 id="teamNameDisplay">TEAM TERMINAL</h2>
+        <h3 style="color: white;">Your Score: <span id="myScore" style="color: #3498db;">0</span></h3>
+
+        <!-- BOMB 1 -->
+        <div class="bomb-section" id="section-bomb1">
+            <h3>💣 Bomb 1 (3 Errors) <span class="indiv-timer" id="timer-bomb1">03:00</span></h3>
+            <p id="status-bomb1" style="color: #f1c40f;">Status: ACTIVE</p>
+            <div id="input-area-bomb1">
+                <div class="boxes-container">
+                    <input type="number" class="code-box bomb1-box" placeholder="L1">
+                    <input type="number" class="code-box bomb1-box" placeholder="L2">
+                    <input type="number" class="code-box bomb1-box" placeholder="L3">
+                </div>
+                <button onclick="defuse('bomb1')">DEFUSE BOMB 1</button>
+            </div>
+        </div>
+
+        <!-- BOMB 2 -->
+        <div class="bomb-section" id="section-bomb2">
+            <h3>💣 Bomb 2 (3 Errors) <span class="indiv-timer" id="timer-bomb2">07:00</span></h3>
+            <p id="status-bomb2" style="color: #f1c40f;">Status: ACTIVE</p>
+            <div id="input-area-bomb2">
+                <div class="boxes-container">
+                    <input type="number" class="code-box bomb2-box" placeholder="L1">
+                    <input type="number" class="code-box bomb2-box" placeholder="L2">
+                    <input type="number" class="code-box bomb2-box" placeholder="L3">
+                </div>
+                <button onclick="defuse('bomb2')">DEFUSE BOMB 2</button>
+            </div>
+        </div>
+
+        <!-- BOMB 3 -->
+        <div class="bomb-section" id="section-bomb3">
+            <h3>💣 Bomb 3 (3 Errors) <span class="indiv-timer" id="timer-bomb3">13:00</span></h3>
+            <p id="status-bomb3" style="color: #f1c40f;">Status: ACTIVE</p>
+            <div id="input-area-bomb3">
+                <div class="boxes-container">
+                    <input type="number" class="code-box bomb3-box" placeholder="L1">
+                    <input type="number" class="code-box bomb3-box" placeholder="L2">
+                    <input type="number" class="code-box bomb3-box" placeholder="L3">
+                </div>
+                <button onclick="defuse('bomb3')">DEFUSE BOMB 3</button>
+            </div>
+        </div>
+
+        <!-- BOMB 4 -->
+        <div class="bomb-section" id="section-bomb4">
+            <h3>💣 Bomb 4 (3 Errors) <span class="indiv-timer" id="timer-bomb4">20:00</span></h3>
+            <p id="status-bomb4" style="color: #f1c40f;">Status: ACTIVE</p>
+            <div id="input-area-bomb4">
+                <div class="boxes-container">
+                    <input type="number" class="code-box bomb4-box" placeholder="L1">
+                    <input type="number" class="code-box bomb4-box" placeholder="L2">
+                    <input type="number" class="code-box bomb4-box" placeholder="L3">
+                </div>
+                <button onclick="defuse('bomb4')">DEFUSE BOMB 4</button>
+            </div>
+        </div>
+
+        <button class="change-team-btn" onclick="changeTeam()">🔄 Change Selected Team</button>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        const teamList = [
+            "Kubi.exe", "StackOverflow", "Everywhere 2.0", "BYTE KNIGHTS",
+            "Pentabyte", "NoZero", "Invariants", "CacheMe", "Nexus", "FrostByte"
+        ];
+        
+        const bombLimits = { bomb1: 180, bomb2: 420, bomb3: 780, bomb4: 1200 };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let paramTeam = urlParams.get('team');
+        let matchedTeam = "";
+
+        if (paramTeam) {
+            const found = teamList.find(t => t.toLowerCase() === paramTeam.trim().toLowerCase());
+            if (found) matchedTeam = found;
+        }
+
+        let myTeam = matchedTeam || localStorage.getItem('myTeam') || "";
+        let currentGameState = 'waiting';
+
+        window.onload = () => {
+            if (myTeam !== "") {
+                localStorage.setItem('myTeam', myTeam);
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('teamNameDisplay').innerText = myTeam + " TERMINAL";
+                socket.emit('registerTeam', myTeam);
+            }
+        };
+
+        function formatTime(seconds) {
+            if (seconds <= 0) return "00:00";
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        socket.on('gameState', (data) => {
+            currentGameState = data.state;
+            if(myTeam !== "") {
+                if (currentGameState === 'waiting') {
+                    document.getElementById('dashboard').style.display = 'none';
+                    document.getElementById('waitingScreen').style.display = 'block';
+                } else {
+                    document.getElementById('waitingScreen').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                }
+            }
+        });
+
+        socket.on('timerUpdate', (elapsedTime) => {
+            // Update individual bomb timers
+            ['bomb1', 'bomb2', 'bomb3', 'bomb4'].forEach(b => {
+                let left = Math.max(bombLimits[b] - elapsedTime, 0);
+                document.getElementById('timer-' + b).innerText = formatTime(left);
+                if(left === 0) document.getElementById('timer-' + b).style.color = "red";
+            });
+        });
+
+        socket.on('updateState', (teams) => {
+            if(!myTeam) return;
+            const myTeamData = teams[myTeam];
+            if(!myTeamData) return;
+
+            document.getElementById('myScore').innerText = myTeamData.score;
+
+            ['bomb1', 'bomb2', 'bomb3', 'bomb4'].forEach(bomb => {
+                const bombData = myTeamData[bomb];
+                const statusText = document.getElementById('status-' + bomb);
+                const inputArea = document.getElementById('input-area-' + bomb);
+                
+                if (bombData.status === 'defused') {
+                    statusText.innerText = "🟢 DEFUSED!";
+                    statusText.className = "status-defused";
+                    inputArea.style.display = "none";
+                } else if (bombData.status === 'exploded') {
+                    statusText.innerText = "🔴 EXPLODED!";
+                    statusText.className = "status-exploded";
+                    inputArea.style.display = "none";
+                } else {
+                    statusText.innerText = '🟡 ACTIVE (Attempts left: ' + (2 - bombData.attempts) + ')';
+                    inputArea.style.display = "block";
+                }
+            });
+        });
+
+        function joinTeam() {
+            myTeam = document.getElementById('teamSelect').value;
+            localStorage.setItem('myTeam', myTeam);
+            
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('teamNameDisplay').innerText = myTeam + " TERMINAL";
+            
+            socket.emit('registerTeam', myTeam);
+            
+            if (currentGameState === 'waiting') {
+                document.getElementById('waitingScreen').style.display = 'block';
+            } else {
+                document.getElementById('dashboard').style.display = 'block';
+            }
+        }
+
+        function changeTeam() {
+            localStorage.removeItem('myTeam');
+            myTeam = "";
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('waitingScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+        }
+
+        function defuse(bombId) {
+            if (currentGameState !== 'playing') {
+                alert("ගේම් එක තවම පටන් ගෙන නැත!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll('.' + bombId + '-box');
+            let values = [];
+            for (let input of inputs) {
+                if (input.value.trim() === "") {
+                    alert("කරුණාකර සියලුම කොටු පූරණය කරන්න!");
+                    return;
+                }
+                values.push(input.value.trim());
+            }
+
+            socket.emit('submitCode', { team: myTeam, bomb: bombId, codeArray: values });
+            inputs.forEach(input => input.value = '');
+        }
+    </script>
+</body>
+</html>
