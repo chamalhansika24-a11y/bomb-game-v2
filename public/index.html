@@ -12,9 +12,9 @@
         .grid-container { flex: 3; overflow-y: auto; padding: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-content: flex-start; }
         .leaderboard-container { flex: 1; background: #1a1a1a; border-left: 2px solid #444; padding: 20px; overflow-y: auto; }
         
-        .team-card { background: #222; padding: 15px; border-radius: 10px; width: 220px; border: 1px solid #444; position: relative; text-align: center; }
-        .team-card h3 { margin-top: 0; }
-        .bomb { display: block; padding: 8px; margin: 5px 0; border-radius: 5px; font-weight: bold; font-size: 16px; }
+        .team-card { background: #222; padding: 15px; border-radius: 10px; width: 230px; border: 1px solid #444; position: relative; text-align: center; }
+        .team-card h3 { margin-top: 0; margin-bottom: 5px; }
+        .bomb { display: block; padding: 8px; margin: 5px 0; border-radius: 5px; font-weight: bold; font-size: 14px; }
         
         .active { background: #f1c40f; color: black; }
         .defused { background: #2ecc71; color: black; }
@@ -30,7 +30,6 @@
         
         #timer { font-size: 60px; font-weight: bold; color: #f1c40f; font-family: monospace; }
         
-        /* Leaderboard Styles */
         .rank-item { background: #333; padding: 10px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 18px; border-left: 5px solid #3498db; }
         .rank-item.top1 { border-left-color: #f1c40f; background: #443a11; }
         .rank-item.top2 { border-left-color: #bdc3c7; background: #2c3135; }
@@ -46,10 +45,7 @@
     </div>
 
     <div class="main-layout">
-        <!-- කණ්ඩායම් වල කාඩ්පත් -->
         <div class="grid-container" id="teamsContainer"></div>
-        
-        <!-- Live Leaderboard එක -->
         <div class="leaderboard-container">
             <h2>🏆 LEADERBOARD</h2>
             <div id="leaderboardList"></div>
@@ -88,17 +84,13 @@
             lbList.innerHTML = '';
 
             let teamArray = [];
-
             for (let teamName in teams) {
-                let team = teams[teamName];
-                teamArray.push({ name: teamName, score: team.score, data: team });
+                teamArray.push({ name: teamName, score: teams[teamName].score, data: teams[teamName] });
             }
 
-            // ලකුණු අනුව Leaderboard එක හැදීම
             teamArray.sort((a, b) => b.score - a.score);
 
             teamArray.forEach((t, index) => {
-                // Dashboard Cards
                 let isOnline = t.data.online;
                 let badgeClass = isOnline ? 'online' : 'offline';
                 let badgeText = isOnline ? '🟢 Online' : '⚪ Offline';
@@ -107,20 +99,16 @@
                     <h3>${t.name}</h3>
                     <div class="status-badge ${badgeClass}">${badgeText}</div>`;
                 
-                ['bomb1', 'bomb2', 'bomb3', 'bomb4'].forEach((b, i) => {
+                ['bomb1', 'bomb2', 'bomb3'].forEach((b, i) => {
                     let status = t.data[b].status;
-                    let text = status === 'active' ? `BOMB ${i+1} (Active)` : status.toUpperCase();
+                    let timeTxt = t.data[b].timeTaken ? ` (${t.data[b].timeTaken})` : '';
+                    let text = status === 'active' ? `BOMB ${i+1} (Active)` : `${status.toUpperCase()}${timeTxt}`;
                     html += `<div class="bomb ${status}">${text}</div>`;
                 });
                 html += `</div>`;
                 container.innerHTML += html;
 
-                // Leaderboard Items
-                let rankClass = '';
-                if(index === 0) rankClass = 'top1';
-                else if(index === 1) rankClass = 'top2';
-                else if(index === 2) rankClass = 'top3';
-
+                let rankClass = index === 0 ? 'top1' : (index === 1 ? 'top2' : (index === 2 ? 'top3' : ''));
                 lbList.innerHTML += `
                     <div class="rank-item ${rankClass}">
                         <span>#${index + 1} ${t.name}</span>
