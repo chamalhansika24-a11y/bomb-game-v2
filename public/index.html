@@ -89,7 +89,7 @@
 
     <script>
         const socket = io();
-        let globalTeamsData = {}; // දත්ත Popup එකට ගන්න ගබඩා කර තබා ගැනීම
+        let globalTeamsData = {}; 
         
         function formatTime(seconds) {
             let m = Math.floor(seconds / 60);
@@ -114,13 +114,42 @@
         });
 
         socket.on('updateState', (teams) => {
-            globalTeamsData = teams; // Update global data for Modal
+            globalTeamsData = teams; 
             
             const container = document.getElementById('teamsContainer');
             const lbList = document.getElementById('leaderboardList');
             container.innerHTML = '';
             lbList.innerHTML = '';
 
+            // 1. Team Cards සඳහා ස්ථාවර අනුපිළිවෙලක් (Fixed Order)
+            const fixedTeamList = [
+                "Kubi.exe", "StackOverflow", "Everywhere 2.0", "BYTE KNIGHTS",
+                "Pentabyte", "NoZero", "Invariants", "CacheMe", "Nexus", "FrostByte"
+            ];
+
+            fixedTeamList.forEach(teamName => {
+                if(!teams[teamName]) return;
+                
+                let tData = teams[teamName];
+                let isOnline = tData.online;
+                let badgeClass = isOnline ? 'online' : 'offline';
+                let badgeText = isOnline ? '🟢 Online' : '⚪ Offline';
+
+                let html = `<div class="team-card">
+                    <h3>${teamName}</h3>
+                    <div class="status-badge ${badgeClass}">${badgeText}</div>`;
+                
+                ['bomb1', 'bomb2', 'bomb3'].forEach((b, i) => {
+                    let status = tData[b].status;
+                    let timeTxt = tData[b].timeTaken ? ` (${tData[b].timeTaken})` : '';
+                    let text = status === 'active' ? `BOMB ${i+1} (Active)` : `${status.toUpperCase()}${timeTxt}`;
+                    html += `<div class="bomb ${status}">${text}</div>`;
+                });
+                html += `</div>`;
+                container.innerHTML += html;
+            });
+
+            // 2. Leaderboard සඳහා ලකුණු අනුව වර්ග කිරීම (Sorted Order)
             let teamArray = [];
             for (let teamName in teams) {
                 teamArray.push({ name: teamName, score: teams[teamName].score, data: teams[teamName] });
@@ -129,23 +158,6 @@
             teamArray.sort((a, b) => b.score - a.score);
 
             teamArray.forEach((t, index) => {
-                let isOnline = t.data.online;
-                let badgeClass = isOnline ? 'online' : 'offline';
-                let badgeText = isOnline ? '🟢 Online' : '⚪ Offline';
-
-                let html = `<div class="team-card">
-                    <h3>${t.name}</h3>
-                    <div class="status-badge ${badgeClass}">${badgeText}</div>`;
-                
-                ['bomb1', 'bomb2', 'bomb3'].forEach((b, i) => {
-                    let status = t.data[b].status;
-                    let timeTxt = t.data[b].timeTaken ? ` (${t.data[b].timeTaken})` : '';
-                    let text = status === 'active' ? `BOMB ${i+1} (Active)` : `${status.toUpperCase()}${timeTxt}`;
-                    html += `<div class="bomb ${status}">${text}</div>`;
-                });
-                html += `</div>`;
-                container.innerHTML += html;
-
                 let rankClass = index === 0 ? 'top1' : (index === 1 ? 'top2' : (index === 2 ? 'top3' : ''));
                 lbList.innerHTML += `
                     <div class="rank-item ${rankClass}">

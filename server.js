@@ -9,9 +9,9 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 const correctAnswers = {
-    bomb1: ["1", "2", "3"], 
-    bomb2: ["1", "2", "3", "4", "5"],
-    bomb3: ["1", "2", "3", "4", "5", "6", "7"]
+    bomb1: ["4", "6", "6"], 
+    bomb2: ["3", "3", "5", "5", "4"],
+    bomb3: ["5", "5", "4", "5", "4", "4", "5"]
 };
 
 const teamList = [
