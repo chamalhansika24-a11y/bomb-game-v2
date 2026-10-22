@@ -15,8 +15,8 @@ const correctAnswers = {
 };
 
 const teamList = [
-    "Kubi.exe", "StackOverflow", "Everywhere 2.0", "BYTE KNIGHTS",
-    "Pentabyte", "NoZero", "Invariants", "CacheMe", "Nexus", "FrostByte"
+    "Kubi.exe", "StackOverflow", "BYTE KNIGHTS", "Pentabyte",
+    "NoZero", "CacheMe", "Nexus", "FrostByte"
 ];
 
 let teams = {};
